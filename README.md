@@ -41,9 +41,3 @@ Ensure that your R environment has the required packages:
 - readr
 
 Seed for reproducibility is set in the simulation script.
-
-## Author
-Raphael Perla
-
-## License
-[Specify your project's license here]
