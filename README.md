@@ -15,7 +15,7 @@ The meta-analysis uses a Stan model to assess advertising targeting effects, whi
 
 ## Repository Structure
 
-- **design_simulation.html**: Rendered HTML output for the simulation study. Unfortunetaly, GitHub does not support rendering files of this size. You may download the file and open it in any browser.
+- **design_simulation.html**: Rendered HTML output for the simulation study. Unfortunately, GitHub does not support rendering files of this size. You may download the file and open it in any browser.
 - **design_simulation.Rmd**: R Markdown file containing code to generate simulation data, run the designs, conduct a grid search over parameter combinations, and visualize estimation bias.
 - **model.stan**: Stan file for the meta-analysis model.
 - **README.md**: This file.
