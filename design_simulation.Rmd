@@ -1,4 +1,26 @@
-rm(list = objects())
+---
+title: "Design Simulation for Psychological Targeting Studies"
+author: "Raphael Perla"
+date: "2025-02-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Overview of the Simulation Study
+
+This document demonstrates a simulation study designed to evaluate the bias in estimating the targeting effect in psychological studies. The analysis compares four different design strategies:
+- **Trait-Treatment Interaction**
+- **Selected Population Design**
+- **Matched-mismatched Design**
+- **Trait-only Design**
+In the simulation, we generate data using the `gen_data()` function, which models the relationship between a trait, treatment condition, and the outcome variable. We simulate different experimental designs through the `get_results()` function, extracting the key coefficient for each design.
+
+## Simulation Setup
+We begin by setting up the necessary libraries and setting a seed for reproducibility.
+```{r, message=FALSE, warning=FALSE}
 library(dplyr)
 library(ggplot2)
 library(plotly)
@@ -7,7 +29,16 @@ library(foreach)
 library(doParallel)
 library(readr)
 set.seed(123)
+```
 
+Next, we define functions to generate the data, run different experimental designs, and analyze results through a grid search over different parameter combinations. Our main functions are:
+
+1. `gen_data()`: Generates synthetic data with specified parameters
+2. `get_results()`: Implements and compares four different design strategies
+3. `grid_search()`: Performs parameter sweep across different effect combinations
+4. `plot_3d_bias()`: Visualizes the bias in estimating the targeting effect
+
+```{r}
 # Define data generating function
 gen_data <- function(n, b0, b1, b2, b3) {
   # Generate trait values and conditions
@@ -100,34 +131,6 @@ grid_search <- function(grid, n, b3, n_designs) {
   return(results)
 }
 
-# Set global parameters to run the simulation
-n <- 10000000 # Asymptotic sample size (ensure this is big enough so that even subset-designs have asymptotic n)
-b3 <- .5
-n_designs <- 4
-grid <- expand.grid(
-  #b0 = seq(-1, 1, by = 0.1),
-  b0 = 0,
-  b1 = c(-.25, 0, .25),
-  b2 = c(-.25, 0, .25)
-)
-
-# Register parallel backend
-cl <- makeCluster(10) # Do not use all your cores, this get's *very* RAM intensive
-clusterExport(cl, c("gen_data", "get_results"))
-registerDoParallel(cl)
-
-# Run the grid search
-results <- grid_search(grid, n, b3, n_designs)
-
-# Stop backend
-stopCluster(cl)
-
-# Print results
-head(results)
-
-# Write to file
-write_rds(results, "data/simulation_results.rds", compress = "gz")
-
 plot_3d_bias <- function(results, true_b3) {
   # Create matrices for each design
   b1_unique <- unique(results$b1)
@@ -184,7 +187,59 @@ plot_3d_bias <- function(results, true_b3) {
   
   return(p)
 }
+```
 
+Finally, we set up global parameters (e.g., simulation sample size, true effect value, and grid search parameters) that drive the subsequent analysis.
+
+```{r}
+# Set global parameters to run the simulation
+n <- 10000000 # Asymptotic sample size (ensure this is big enough so that even subset-designs have asymptotic n)
+b3 <- .5
+n_designs <- 4
+grid <- expand.grid(
+  #b0 = seq(-1, 1, by = 0.1),
+  b0 = 0,
+  b1 = c(-.25, 0, .25),
+  b2 = c(-.25, 0, .25)
+)
+```
+
+## Running the Simulation
+We implement parallel processing using the `doParallel` package to efficiently run the grid search over combinations of main effects. The `grid_search()` function iterates over the grid, simulating data and calculating estimates for each design.
+
+```{r}
+# Register parallel backend
+cl <- makeCluster(10) # Do not use all your cores, this get's *very* RAM intensive
+clusterExport(cl, c("gen_data", "get_results"))
+registerDoParallel(cl)
+
+# Run the grid search
+results <- grid_search(grid, n, b3, n_designs)
+
+# Stop backend
+stopCluster(cl)
+
+# Print results
+head(results)
+```
+
+## Visualizing the Bias in Estimating the Targeting Effect
+The `plot_3d_bias()` function constructs a 3D plot using the plotly library to visualize the bias (difference between estimated and true effects) over different values of trait and ad condition main effects. This aids in understanding how design choices influence the estimation bias.
+
+```{r}
 # Create the plot
 fig <- plot_3d_bias(results, b3)
 fig
+```
+
+## Error Analysis
+Finally, we compute and report the mean absolute error (MAE) for each design. The MAE quantifies the average deviation of the estimated effects from the true value, providing a benchmark for the performance of each design.
+
+```{r}
+# Calculate mean absolute error for all designs
+mae <- apply(results[, 1:4], 2, function(x) mean(abs(x - b3)))
+
+# Print results
+cat("Mean absolute error for all designs:\n")
+mae
+```
