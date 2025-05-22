@@ -28,8 +28,8 @@ parameters {
 
   // raw parameters for non-centered reparameterization
   vector[n_ind_ml_studies] u_ml_raw;
-  vector[n_ml_studies]     theta_ml_raw;
-  vector[n_ad_studies]     theta_ad_raw;
+  vector[n_ml_studies] theta_ml_raw;
+  vector[n_ad_studies] theta_ad_raw;
 }
 
 transformed parameters {
@@ -86,8 +86,7 @@ generated quantities {
   }
 
   real total_mu_r = tanh(mu_ml);
-  real attenuated_effect    = total_mu_r * mu_ad_r;
-  real disattenuated_effect = (abs(total_mu_r) < 1e-6) ? 0 : mu_ad_r / total_mu_r;
+  real attenuated_effect = total_mu_r * mu_ad_r;
 
   real i_squared_ad = square(tau_ad) / (square(tau_ad) + mean(square(ad_ses))) * 100;
   real i_squared_ml = square(tau_ml) / (square(tau_ml) + mean(square(ml_ses))) * 100;
